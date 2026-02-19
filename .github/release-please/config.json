@@ -1,0 +1,25 @@
+{
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "group-pull-request-title-pattern": "chore: release ${version}",
+  "packages": {
+    ".": {
+      "component": "test",
+      "release-type": "simple",
+      "extra-files": ["deployment.yml"]
+    },
+    "test-api": {
+      "component": "test-api",
+      "release-type": "node",
+      "skip-github-release": true
+    }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "test",
+      "components": ["test", "test-api"]
+    }
+  ]
+}

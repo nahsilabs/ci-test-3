@@ -1,0 +1,59 @@
+name: "release-please"
+
+on:
+  push:
+    branches:
+      - "main"
+      - "backport/*"
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      pr: ${{ steps.release.outputs['pr'] }}
+      tag-name: ${{ steps.release.outputs['tag_name'] }}
+      version: ${{ steps.release.outputs['version'] }}
+
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          target-branch: ${{ github.ref_name }}
+          config-file: ${{ github.ref_name == 'main'
+            && '.github/release-please/config.json'
+            || '.github/release-please/backport/config.json' }}
+          manifest-file: ${{ github.ref_name == 'main'
+            && '.github/release-please/manifest.json'
+            || '.github/release-please/backport/manifest.json' }}
+
+      - name: Show output from release-please
+        if: steps.release.outputs.release_created
+        env:
+          RELEASE_PLEASE_OUTPUT: ${{ toJSON(steps.release.outputs) }}
+        run: echo "${RELEASE_PLEASE_OUTPUT}" | jq
+
+  sync-release:
+    needs: release-please
+    if: needs.release-please.outputs.release-created
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Sync release commit back to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags origin "${{ needs.release-please.outputs.tag-name }}"
+          git cherry-pick -x --no-commit "${{ needs.release-please.outputs.tag-name }}"
+          git commit -m "chore: sync release ${{ needs.release-please.outputs.version }} from main"
+          git push origin HEAD:develop
