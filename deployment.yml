@@ -7,4 +7,5 @@ spec:
     spec:
       containers:
         - name: test
+          oooh: hmmm
           image: nahsilabs/test:0.0.3 # x-release-please-version
