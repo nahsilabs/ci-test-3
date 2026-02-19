@@ -8,4 +8,4 @@ spec:
       containers:
         - name: test
           oooh: hmmm
-          image: nahsilabs/test:0.0.3 # x-release-please-version
+          image: nahsilabs/test:0.0.4 # x-release-please-version
